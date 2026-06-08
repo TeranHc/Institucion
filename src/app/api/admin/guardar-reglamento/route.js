@@ -58,7 +58,7 @@ export async function POST(req) {
     // -----------------------------------------------------------------------
 
     // NUEVO: Extraemos audiencia y estado desde el frontend
-    const { id, titulo, contenido, categoria, audiencia, estado, action } = await req.json()
+    const { id, titulo, contenido, categoria, audiencia, estado, archivo_url,action } = await req.json()
 
     if (!contenido) throw new Error("El contenido es obligatorio para generar el vector")
 
@@ -93,6 +93,7 @@ export async function POST(req) {
         categoria,
         audiencia: docAudiencia, // NUEVO
         estado: docEstado,       // NUEVO
+        archivo_url,
         embedding: vector
       }])
       errorSupabase = error
@@ -104,6 +105,7 @@ export async function POST(req) {
         categoria,
         audiencia: docAudiencia, // NUEVO
         estado: docEstado,       // NUEVO
+        archivo_url,
         embedding: vector,
         fecha_actualizacion: new Date().toISOString()
       }).eq('id', id)

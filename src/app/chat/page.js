@@ -7,7 +7,8 @@ import ReactMarkdown from 'react-markdown';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'; 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Mic, MicOff, LogOut, Send, BookOpen, MessageSquare, Loader2, VolumeX, Lock, Unlock } from 'lucide-react';
+// NUEVO: Importamos FileText y Download para los documentos
+import { Mic, MicOff, LogOut, Send, BookOpen, MessageSquare, Loader2, VolumeX, Lock, Unlock, FileText, Download } from 'lucide-react';
 
 export default function AsistenteFinalAzul() {
   const router = useRouter()
@@ -285,7 +286,6 @@ export default function AsistenteFinalAzul() {
     if (!mountRef.current) return
 
     const scene = new THREE.Scene();
-    // Fondo oscuro cálido en lugar del azul profundo — mantiene el drama pero con tono rojizo
     const darkBg = 0x1a0508;
     scene.fog = new THREE.Fog(darkBg, 5, 20); 
     scene.background = new THREE.Color(darkBg);
@@ -305,7 +305,7 @@ export default function AsistenteFinalAzul() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true; 
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace; 
     renderer.toneMapping = THREE.ACESFilmicToneMapping; 
     renderer.toneMappingExposure = 0.85;
@@ -341,14 +341,12 @@ export default function AsistenteFinalAzul() {
     fillLight.position.set(0, 5, -2);
     scene.add(fillLight);
 
-    // Rim light dorado en lugar de cian
     const rimLight = new THREE.SpotLight(0xEF9F27, 2.5);
     rimLight.position.set(-5, 5, 2);
     rimLight.lookAt(0, 1, 0);
     scene.add(rimLight);
     
     const floorGeometry = new THREE.CircleGeometry(5, 32);
-    // Piso con tono rojizo oscuro
     const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x3a0510, roughness: 0.3, metalness: 0.5 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
@@ -360,7 +358,6 @@ export default function AsistenteFinalAzul() {
     const positions = new Float32Array(particlesCount * 3);
     for (let i = 0; i < particlesCount * 3; i++) positions[i] = (Math.random() - 0.5) * 15;
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    // Partículas doradas en lugar de cian
     const particlesMaterial = new THREE.PointsMaterial({ color: 0xEF9F27, size: 0.05, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
     const particles = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particles);
@@ -516,13 +513,20 @@ export default function AsistenteFinalAzul() {
             setThoughtSignature(data.thoughtSignature);
         }
 
-        const botMsg = { 
-            role: 'bot', 
-            content: data.response, 
+        // NUEVO: Atrapamos la imagen del uniforme o el archivo del reglamento
+        const botMsg = {
+            role: 'bot',
+            content: data.response,
             source: data.source,
+            imageUrl: data.imagen_url || data.imageUrl || null, 
+            archivoUrl: data.archivo_url || data.archivoUrl || null, 
             suggestions: data.suggestions,
-            time: new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }) 
-        };
+            time: new Date().toLocaleTimeString('es-EC', {
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+        }
+        
         setMessages(prev => [...prev, botMsg]);
         speakText(data.response);
 
@@ -538,28 +542,18 @@ export default function AsistenteFinalAzul() {
   return (
     <div className="flex flex-col h-dvh overflow-hidden font-sans text-gray-800">
 
-      {/* HEADER — rojo vino con acento dorado */}
+      {/* HEADER */}
       <header
         className="flex-none backdrop-blur-md shadow-md p-4 flex justify-between items-center z-50 relative"
-        style={{
-          backgroundColor: '#7A1020',
-          borderBottom: '2px solid #EF9F27',
-        }}
+        style={{ backgroundColor: '#7A1020', borderBottom: '2px solid #EF9F27' }}
       >
         <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center shadow-md"
-            style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
-          >
+          <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
             <BookOpen className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold leading-tight" style={{ color: '#FFFFFF' }}>
-              Casita de Verano
-            </h1>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>
-              {userEmail || 'Cargando...'}
-            </p>
+            <h1 className="text-lg font-bold leading-tight" style={{ color: '#FFFFFF' }}>Casita de Verano</h1>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>{userEmail || 'Cargando...'}</p>
           </div>
         </div>
       </header>
@@ -567,69 +561,41 @@ export default function AsistenteFinalAzul() {
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
 
         {/* CONTENEDOR 3D */}
-        <div
-          className="w-full h-[45dvh] md:w-1/2 md:h-auto flex flex-col relative border-b md:border-r md:border-b-0 shrink-0"
-          style={{ borderColor: '#D3D1C7' }}
-        >
+        <div className="w-full h-[45dvh] md:w-1/2 md:h-auto flex flex-col relative border-b md:border-r md:border-b-0 shrink-0" style={{ borderColor: '#D3D1C7' }}>
           <div className="flex-1 relative" style={{ background: 'linear-gradient(135deg, #1a0508 0%, #2d0a12 50%, #1a0508 100%)' }}>
             <div ref={mountRef} className="absolute inset-0 w-full h-full cursor-move z-0" />
 
             {showGreeting && (
               <div className="absolute top-[20%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 animate-[bounce_2s_infinite]">
-                <div
-                  className="relative px-5 py-3 rounded-2xl shadow-2xl"
-                  style={{ backgroundColor: '#FFFFFF', border: '2px solid #FAECE7' }}
-                >
-                  <p className="text-sm font-bold whitespace-nowrap" style={{ color: '#7A1020' }}>
-                    ¡Hola! Estoy lista 👋
-                  </p>
+                <div className="relative px-5 py-3 rounded-2xl shadow-2xl" style={{ backgroundColor: '#FFFFFF', border: '2px solid #FAECE7' }}>
+                  <p className="text-sm font-bold whitespace-nowrap" style={{ color: '#7A1020' }}>¡Hola! Estoy lista 👋</p>
                   <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white"></div>
                 </div>
               </div>
             )}
 
             <div className="absolute top-5 left-5 z-20 text-left pointer-events-none">
-              <h2
-                className="text-xl font-bold"
-                style={{ color: '#FFFFFF', textShadow: '0 0 10px rgba(239,159,39,0.8)' }}
-              >
-                MARY AI
-              </h2>
+              <h2 className="text-xl font-bold" style={{ color: '#FFFFFF', textShadow: '0 0 10px rgba(239,159,39,0.8)' }}>MARY AI</h2>
               <p className="text-xs font-mono" style={{ color: '#FAC775' }}>
-                {isLoading ? '⚡ BUSCANDO REGLAS...' : isSpeaking ? '🔊 HABLANDO...' : isListening ? '🎤 ESCUCHANDO...' : '🤖 EN LÍNEA'}
+                {isLoading ? '⚡ BUSCANDO DATOS...' : isSpeaking ? '🔊 HABLANDO...' : isListening ? '🎤 ESCUCHANDO...' : '🤖 EN LÍNEA'}
               </p>
             </div>
 
             <button
               onClick={() => setIsCameraFixed(!isCameraFixed)}
               className="absolute top-5 right-5 z-20 p-2 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 border"
-              style={isCameraFixed
-                ? { backgroundColor: 'rgba(122,16,32,0.8)', color: '#FFFFFF', borderColor: '#EF9F27' }
-                : { backgroundColor: 'rgba(255,255,255,0.15)', color: '#FAC775', borderColor: 'rgba(255,255,255,0.1)' }
-              }
-              title={isCameraFixed ? "Desbloquear Cámara" : "Fijar Cámara"}
+              style={isCameraFixed ? { backgroundColor: 'rgba(122,16,32,0.8)', color: '#FFFFFF', borderColor: '#EF9F27' } : { backgroundColor: 'rgba(255,255,255,0.15)', color: '#FAC775', borderColor: 'rgba(255,255,255,0.1)' }}
             >
               {isCameraFixed ? <Lock size={20} /> : <Unlock size={20} />}
             </button>
           </div>
 
-          <div
-            className="p-3 md:p-4 flex justify-between items-center z-20"
-            style={{ backgroundColor: '#FFFFFF', borderTop: '1px solid #D3D1C7' }}
-          >
-            <p className="text-[10px] italic leading-tight mr-2" style={{ color: '#888780' }}>
-              Sistema de Atención a Padres y Alumnos
-            </p>
+          <div className="p-3 md:p-4 flex justify-between items-center z-20" style={{ backgroundColor: '#FFFFFF', borderTop: '1px solid #D3D1C7' }}>
+            <p className="text-[10px] italic leading-tight mr-2" style={{ color: '#888780' }}>Sistema de Atención a Padres y Alumnos</p>
             <button
               onClick={handleLogout}
-              className="flex-none flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full transition text-xs md:text-sm font-medium"
-              style={{
-                backgroundColor: '#FAECE7',
-                color: '#7A1020',
-                border: '1px solid #F5C4B3',
-              }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F5C4B3'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#FAECE7'}
+              className="flex-none flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full transition text-xs md:text-sm font-medium hover:bg-[#F5C4B3]"
+              style={{ backgroundColor: '#FAECE7', color: '#7A1020', border: '1px solid #F5C4B3' }}
             >
               <LogOut className="w-3 h-3 md:w-4 md:h-4" /> Salir
             </button>
@@ -637,40 +603,23 @@ export default function AsistenteFinalAzul() {
         </div>
 
         {/* CONTENEDOR CHAT */}
-        <div
-          className="w-full flex-1 md:w-1/2 flex flex-col relative z-10 shadow-2xl overflow-hidden"
-          style={{ backgroundColor: '#FFFFFF' }}
-        >
+        <div className="w-full flex-1 md:w-1/2 flex flex-col relative z-10 shadow-2xl overflow-hidden" style={{ backgroundColor: '#FFFFFF' }}>
           <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
 
             {messages.length === 0 && (
               <div className="text-center py-2 md:py-12 animate-fade-in-up">
-                <div
-                  className="w-14 h-14 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-6"
-                  style={{ backgroundColor: '#FAECE7', boxShadow: '0 8px 24px rgba(122,16,32,0.15)' }}
-                >
+                <div className="w-14 h-14 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-6" style={{ backgroundColor: '#FAECE7', boxShadow: '0 8px 24px rgba(122,16,32,0.15)' }}>
                   <MessageSquare className="w-6 h-6 md:w-12 md:h-12" style={{ color: '#7A1020' }} />
                 </div>
-                <h2 className="text-lg md:text-2xl font-bold mb-1 md:mb-3" style={{ color: '#2C2C2A' }}>
-                  ¡Hola! Soy tu asistente
-                </h2>
-                <p className="text-xs md:text-base mb-4 max-w-md mx-auto px-2" style={{ color: '#888780' }}>
-                  Estoy aquí para ayudarte con información sobre la escuela.
-                </p>
+                <h2 className="text-lg md:text-2xl font-bold mb-1 md:mb-3" style={{ color: '#2C2C2A' }}>¡Hola! Soy tu asistente</h2>
+                <p className="text-xs md:text-base mb-4 max-w-md mx-auto px-2" style={{ color: '#888780' }}>Estoy aquí para ayudarte con información, uniformes o eventos.</p>
                 <div className="grid grid-cols-1 gap-2 md:gap-3 max-w-md mx-auto px-4">
-                  {['¿Cuáles son los requisitos de matrícula?', '¿Qué documentos necesito llevar?', '¿Cuál es el horario de atención?'].map((q, i) => (
+                  {['¿Tienen uniformes deportivos?', '¿Cuándo es el próximo evento?', '¿Cuáles son los requisitos de matrícula?'].map((q, i) => (
                     <button
                       key={i}
                       onClick={() => handleSubmit(q)}
-                      className="p-2 md:p-4 rounded-xl text-center text-xs md:text-sm transition truncate"
-                      style={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #D3D1C7',
-                        color: '#5F5E5A',
-                        boxShadow: '0 1px 4px rgba(122,16,32,0.06)',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#7A1020'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(122,16,32,0.12)' }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#D3D1C7'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(122,16,32,0.06)' }}
+                      className="p-2 md:p-4 rounded-xl text-center text-xs md:text-sm transition truncate hover:border-[#7A1020] hover:shadow-md"
+                      style={{ backgroundColor: '#FFFFFF', border: '1px solid #D3D1C7', color: '#5F5E5A' }}
                     >
                       {q}
                     </button>
@@ -705,12 +654,41 @@ export default function AsistenteFinalAzul() {
                     </ReactMarkdown>
                   </div>
 
-                  {msg.source && (
-                    <p
-                      className="text-xs mt-3 pt-2 opacity-70 italic flex items-center gap-1"
-                      style={{ borderTop: '1px solid #F1EFE8' }}
+                  {/* NUEVO: RENDERIZADO DE IMÁGENES DE UNIFORMES */}
+                  {msg.imageUrl && (
+                    <div className="mt-4 rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: '#D3D1C7' }}>
+                      <img
+                        src={msg.imageUrl}
+                        alt="Imagen adjunta"
+                        className="w-full max-h-80 object-cover hover:scale-105 transition duration-500 cursor-pointer"
+                        onClick={() => window.open(msg.imageUrl, '_blank')}
+                      />
+                    </div>
+                  )}
+
+                  {/* NUEVO: RENDERIZADO DE BOTONES DE DESCARGA PARA ARCHIVOS/PDFs */}
+                  {msg.archivoUrl && msg.archivoUrl.split(',').filter(Boolean).map((url, idx) => (
+                    <a 
+                      key={idx} 
+                      href={url.trim()} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="mt-3 flex items-center gap-3 p-3 rounded-xl border transition group shadow-sm hover:bg-[#F5C4B3]" 
+                      style={{ backgroundColor: '#FAECE7', borderColor: '#F5C4B3', color: '#7A1020' }}
                     >
-                      <BookOpen size={10}/> Fuente: {msg.source}
+                      <div className="p-2 bg-white rounded-lg shadow-sm group-hover:bg-[#7A1020] group-hover:text-white transition">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold flex-1 truncate">
+                        Ver Documento {msg.archivoUrl.split(',').filter(Boolean).length > 1 ? idx + 1 : ''}
+                      </span>
+                      <Download className="w-4 h-4 opacity-50 group-hover:opacity-100 transition" />
+                    </a>
+                  ))}
+
+                  {msg.source && (
+                    <p className="text-[10px] mt-4 pt-2 opacity-70 italic flex items-center gap-1 font-semibold uppercase" style={{ borderTop: '1px solid #D3D1C7', color: '#7A1020' }}>
+                      <BookOpen size={12}/> Fuente: {msg.source}
                     </p>
                   )}
 
@@ -720,14 +698,8 @@ export default function AsistenteFinalAzul() {
                         <button
                           key={idx}
                           onClick={() => handleSubmit(sug)}
-                          className="text-[11px] px-3 py-1.5 rounded-full transition font-medium"
-                          style={{
-                            backgroundColor: '#FAECE7',
-                            color: '#7A1020',
-                            border: '1px solid #F5C4B3',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F5C4B3'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#FAECE7'}
+                          className="text-[11px] px-3 py-1.5 rounded-full transition font-medium hover:bg-[#F5C4B3]"
+                          style={{ backgroundColor: '#FAECE7', color: '#7A1020', border: '1px solid #F5C4B3' }}
                         >
                           ✨ {sug}
                         </button>
@@ -735,10 +707,7 @@ export default function AsistenteFinalAzul() {
                     </div>
                   )}
 
-                  <p
-                    className="text-[10px] mt-2 text-right"
-                    style={{ color: msg.role === 'user' ? 'rgba(255,255,255,0.5)' : '#B4B2A9' }}
-                  >
+                  <p className="text-[10px] mt-2 text-right" style={{ color: msg.role === 'user' ? 'rgba(255,255,255,0.5)' : '#B4B2A9' }}>
                     {msg.time}
                   </p>
                 </div>
@@ -747,13 +716,10 @@ export default function AsistenteFinalAzul() {
 
             {isLoading && (
               <div className="flex justify-start">
-                <div
-                  className="rounded-2xl p-4 shadow-sm"
-                  style={{ backgroundColor: '#FFFFFF', border: '1px solid #D3D1C7', borderRadius: '1rem 1rem 1rem 0.25rem' }}
-                >
+                <div className="rounded-2xl p-4 shadow-sm" style={{ backgroundColor: '#FFFFFF', border: '1px solid #D3D1C7', borderRadius: '1rem 1rem 1rem 0.25rem' }}>
                   <div className="flex gap-1.5 items-center">
                     <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#7A1020' }} />
-                    <span className="text-xs" style={{ color: '#888780' }}>Consultando información...</span>
+                    <span className="text-xs" style={{ color: '#888780' }}>Consultando base de datos...</span>
                   </div>
                 </div>
               </div>
@@ -762,37 +728,18 @@ export default function AsistenteFinalAzul() {
           </div>
 
           {/* INPUT AREA */}
-          <div
-            className="p-3 md:p-4 pb-6 md:pb-4 flex-none z-20"
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.97)',
-              borderTop: '1px solid #D3D1C7',
-              boxShadow: '0 -4px 6px -1px rgba(122,16,32,0.05)',
-            }}
-          >
+          <div className="p-3 md:p-4 pb-6 md:pb-4 flex-none z-20" style={{ backgroundColor: 'rgba(255,255,255,0.97)', borderTop: '1px solid #D3D1C7', boxShadow: '0 -4px 6px -1px rgba(122,16,32,0.05)' }}>
             <div className="flex gap-2 md:gap-3">
-
               {isSpeaking && (
-                <button
-                  onClick={stopSpeaking}
-                  className="p-3 md:p-4 rounded-full shadow-md flex-none transition animate-in fade-in zoom-in"
-                  style={{ backgroundColor: '#FAEEDA', color: '#854F0B' }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#FAC775'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#FAEEDA'}
-                >
+                <button onClick={stopSpeaking} className="p-3 md:p-4 rounded-full shadow-md flex-none transition hover:bg-[#FAC775]" style={{ backgroundColor: '#FAEEDA', color: '#854F0B' }}>
                   <VolumeX className="w-5 h-5" />
                 </button>
               )}
 
               <button
                 onClick={toggleVoice}
-                className="p-3 md:p-4 rounded-full transition shadow-md flex-none"
-                style={isListening
-                  ? { backgroundColor: '#7A1020', color: '#FFFFFF' }
-                  : { backgroundColor: '#F1EFE8', color: '#5F5E5A' }
-                }
-                onMouseEnter={e => { if (!isListening) e.currentTarget.style.backgroundColor = '#D3D1C7' }}
-                onMouseLeave={e => { if (!isListening) e.currentTarget.style.backgroundColor = '#F1EFE8' }}
+                className="p-3 md:p-4 rounded-full transition shadow-md flex-none hover:bg-gray-200"
+                style={isListening ? { backgroundColor: '#7A1020', color: '#FFFFFF' } : { backgroundColor: '#F1EFE8', color: '#5F5E5A' }}
               >
                 {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
@@ -803,32 +750,21 @@ export default function AsistenteFinalAzul() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
                 placeholder="Escribe o habla tu consulta..."
-                className="flex-1 p-3 md:p-4 rounded-full outline-none text-sm md:text-base"
-                style={{
-                  backgroundColor: '#F1EFE8',
-                  border: '1px solid #D3D1C7',
-                  color: '#2C2C2A',
-                }}
-                onFocus={e => { e.target.style.borderColor = '#7A1020'; e.target.style.boxShadow = '0 0 0 3px rgba(122,16,32,0.1)' }}
-                onBlur={e => { e.target.style.borderColor = '#D3D1C7'; e.target.style.boxShadow = 'none' }}
+                className="flex-1 p-3 md:p-4 rounded-full outline-none text-sm md:text-base focus:border-[#7A1020] focus:shadow-md transition"
+                style={{ backgroundColor: '#F1EFE8', border: '1px solid #D3D1C7', color: '#2C2C2A' }}
                 disabled={isLoading}
               />
 
               <button
                 onClick={() => handleSubmit()}
                 disabled={!input.trim() || isLoading}
-                className="p-3 md:p-4 rounded-full transition transform active:scale-95 shadow-md flex-none"
+                className="p-3 md:p-4 rounded-full transition transform active:scale-95 shadow-md flex-none disabled:bg-gray-300 hover:bg-[#5C0A14]"
                 style={{ backgroundColor: !input.trim() || isLoading ? '#D3D1C7' : '#7A1020', color: '#FFFFFF' }}
-                onMouseEnter={e => { if (input.trim() && !isLoading) e.currentTarget.style.backgroundColor = '#5C0A14' }}
-                onMouseLeave={e => { if (input.trim() && !isLoading) e.currentTarget.style.backgroundColor = '#7A1020' }}
               >
                 <Send className="w-5 h-5" />
               </button>
             </div>
-
-            <p className="text-[10px] text-center mt-2" style={{ color: '#B4B2A9' }}>
-              Casita de Verano - Guayaquil, Ecuador
-            </p>
+            <p className="text-[10px] text-center mt-2" style={{ color: '#B4B2A9' }}>Casita de Verano - Guayaquil, Ecuador</p>
           </div>
         </div>
       </div>

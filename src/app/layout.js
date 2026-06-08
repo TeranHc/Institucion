@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 
 // 1. AQUI ACTUALIZAMOS LOS METADATOS
 export const metadata = {
-  title: "Asistente UG Reglamentos",
+  title: "Asistente Virtual Reglamentos",
   description: "Asistente virtual para consultar los reglamentos de la Universidad de Guayaquil",
   manifest: "/manifest.json", // <--- VITAL: Conexión con el archivo creado
   appleWebApp: {
