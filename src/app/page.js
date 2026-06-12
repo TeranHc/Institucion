@@ -121,20 +121,7 @@ export default function LoginPage() {
         />
 
         {/* Encabezado */}
-        <div className="text-center relative">
-          {isInstallable && (
-            <button
-              onClick={handleInstallClick}
-              className="absolute top-0 right-0 p-2 rounded-full transition"
-              style={{ color: '#EF9F27', backgroundColor: 'rgba(255,255,255,0.1)' }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.18)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-              title="Instalar App"
-            >
-              <Download size={20} />
-            </button>
-          )}
-
+        <div className="text-center relative z-10">
           {/* Línea dorada superior */}
           <div className="flex justify-center mb-4">
             <div style={{ height: '3px', width: '48px', borderRadius: '99px', backgroundColor: '#EF9F27' }} />
@@ -146,20 +133,10 @@ export default function LoginPage() {
           <p className="mt-1 text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
             Portal de Atención Virtual
           </p>
-
-          {isInstallable && (
-            <p
-              className="text-xs mt-2 cursor-pointer hover:underline"
-              style={{ color: '#EF9F27' }}
-              onClick={handleInstallClick}
-            >
-              ¡Instala nuestra aplicación!
-            </p>
-          )}
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4 z-10 relative">
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
               Correo Electrónico
@@ -246,7 +223,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center font-semibold py-3 rounded-lg transition"
+            className="w-full flex items-center justify-center font-semibold py-3 rounded-lg transition mt-2"
             style={{
               backgroundColor: '#EF9F27',
               color: '#7A1020',
@@ -271,8 +248,34 @@ export default function LoginPage() {
           </button>
         </form>
 
+        {/* Botón de instalación PWA más visible */}
+        {isInstallable && (
+          <div className="z-10 relative mt-4">
+            <button
+              onClick={handleInstallClick}
+              className="w-full flex items-center justify-center font-semibold py-3 rounded-lg transition border"
+              style={{
+                backgroundColor: 'rgba(239, 159, 39, 0.1)',
+                color: '#c0b4a2',
+                borderColor: 'rgba(119, 110, 96, 0.4)',
+              }}
+              onMouseEnter={e => { 
+                e.currentTarget.style.backgroundColor = 'rgba(239, 159, 39, 0.2)'
+                e.currentTarget.style.borderColor = '#EF9F27'
+              }}
+              onMouseLeave={e => { 
+                e.currentTarget.style.backgroundColor = 'rgba(239, 159, 39, 0.1)'
+                e.currentTarget.style.borderColor = 'rgba(239, 159, 39, 0.4)'
+              }}
+            >
+              <Download className="mr-2 h-5 w-5" />
+              Instalar Aplicación
+            </button>
+          </div>
+        )}
+
         {/* Línea dorada inferior */}
-        <div className="flex justify-center pt-1">
+        <div className="flex justify-center pt-2 relative z-10">
           <div style={{ height: '3px', width: '48px', borderRadius: '99px', backgroundColor: '#EF9F27' }} />
         </div>
 
