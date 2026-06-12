@@ -7,8 +7,8 @@ import ReactMarkdown from 'react-markdown';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'; 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-// NUEVO: Importamos FileText y Download para los documentos
-import { Mic, MicOff, LogOut, Send, BookOpen, MessageSquare, Loader2, VolumeX, Lock, Unlock, FileText, Download } from 'lucide-react';
+// Se agregaron los iconos: Calendar, ChevronLeft, ChevronRight, X, Clock, Info
+import { Mic, MicOff, LogOut, Send, BookOpen, MessageSquare, Loader2, VolumeX, Lock, Unlock, FileText, Download, Calendar, ChevronLeft, ChevronRight, X, Clock, Info } from 'lucide-react';
 
 export default function AsistenteFinalAzul() {
   const router = useRouter()
@@ -25,6 +25,12 @@ export default function AsistenteFinalAzul() {
   const [showGreeting, setShowGreeting] = useState(true)
   const [isCameraFixed, setIsCameraFixed] = useState(true)
   const [thoughtSignature, setThoughtSignature] = useState(null)
+
+  // --- NUEVOS ESTADOS PARA EL CALENDARIO ---
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [eventos, setEventos] = useState([])
+  const [calendarDate, setCalendarDate] = useState(new Date())
+  const [selectedEvent, setSelectedEvent] = useState(null)
 
   const mountRef = useRef(null)
   const sceneRef = useRef(null)
@@ -513,7 +519,6 @@ export default function AsistenteFinalAzul() {
             setThoughtSignature(data.thoughtSignature);
         }
 
-        // NUEVO: Atrapamos la imagen del uniforme o el archivo del reglamento
         const botMsg = {
             role: 'bot',
             content: data.response,
@@ -539,10 +544,32 @@ export default function AsistenteFinalAzul() {
     }
   };
 
-  return (
-    <div className="flex flex-col h-dvh overflow-hidden font-sans text-gray-800">
+  // ==========================================
+  // LOGICA DEL CALENDARIO DE SOLO LECTURA
+  // ==========================================
+  const abrirCalendario = async () => {
+    setShowCalendar(true);
+    const { data } = await supabase.from('eventos_escolares').select('*').order('fecha_evento', { ascending: true });
+    if (data) setEventos(data);
+  };
 
-      {/* HEADER */}
+  const daysInMonth = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1).getDay();
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  const chipStyle = (tipo) => {
+    const t = (tipo || '').toLowerCase()
+    if (t.includes('examen'))          return { chip: 'border-l-2 border-red-500 bg-red-50 text-red-800',     badge: 'bg-red-50 text-red-700 border border-red-200' }
+    if (t.includes('reuni'))           return { chip: 'border-l-2 border-blue-500 bg-blue-50 text-blue-800',  badge: 'bg-blue-50 text-blue-700 border border-blue-200' }
+    if (t.includes('feriado'))         return { chip: 'border-l-2 border-green-500 bg-green-50 text-green-800', badge: 'bg-green-50 text-green-700 border border-green-200' }
+    return                             { chip: 'border-l-2 border-amber-500 bg-amber-50 text-amber-800',  badge: 'bg-amber-50 text-amber-700 border border-amber-200' }
+  }
+
+
+  return (
+    <div className="flex flex-col h-dvh overflow-hidden font-sans text-gray-800 relative">
+
+      {/* HEADER PRINCIPAL */}
       <header
         className="flex-none backdrop-blur-md shadow-md p-4 flex justify-between items-center z-50 relative"
         style={{ backgroundColor: '#7A1020', borderBottom: '2px solid #EF9F27' }}
@@ -556,8 +583,17 @@ export default function AsistenteFinalAzul() {
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>{userEmail || 'Cargando...'}</p>
           </div>
         </div>
+
+        {/* BOTÓN PARA ABRIR EL CALENDARIO DE EVENTOS */}
+        <button 
+          onClick={abrirCalendario} 
+          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 md:px-4 py-2 rounded-full transition shadow-sm text-xs md:text-sm font-semibold backdrop-blur-md"
+        >
+          <Calendar size={16} /> <span className="hidden sm:inline">Ver Cronograma</span>
+        </button>
       </header>
 
+      {/* CUERPO PRINCIPAL */}
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
 
         {/* CONTENEDOR 3D */}
@@ -654,7 +690,6 @@ export default function AsistenteFinalAzul() {
                     </ReactMarkdown>
                   </div>
 
-                  {/* NUEVO: RENDERIZADO DE IMÁGENES DE UNIFORMES */}
                   {msg.imageUrl && (
                     <div className="mt-4 rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: '#D3D1C7' }}>
                       <img
@@ -666,7 +701,6 @@ export default function AsistenteFinalAzul() {
                     </div>
                   )}
 
-                  {/* NUEVO: RENDERIZADO DE BOTONES DE DESCARGA PARA ARCHIVOS/PDFs */}
                   {msg.archivoUrl && msg.archivoUrl.split(',').filter(Boolean).map((url, idx) => (
                     <a 
                       key={idx} 
@@ -768,6 +802,188 @@ export default function AsistenteFinalAzul() {
           </div>
         </div>
       </div>
+
+      {/* ========================================== */}
+      {/* MODAL DEL CALENDARIO (SOLO LECTURA) */}
+      {/* ========================================== */}
+      {showCalendar && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-2 md:p-6 animate-in fade-in"
+          onClick={() => setShowCalendar(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] md:h-full max-h-[800px] flex flex-col overflow-hidden" 
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Cabecera del Modal Calendario */}
+            <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+              <h2 className="text-xl font-black text-[#7A1020] flex items-center gap-2">
+                <Calendar size={24} /> Cronograma de Eventos
+              </h2>
+              <button 
+                onClick={() => setShowCalendar(false)} 
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-200 text-gray-500 hover:bg-gray-300 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            {/* Cuerpo del Modal Calendario */}
+            <div className="flex-1 flex flex-col p-3 md:p-5 bg-[#F5F4F0] min-h-0 overflow-hidden">
+               
+               {/* Controles de Navegación del Mes */}
+               <div className="flex justify-center items-center gap-2 md:gap-4 mb-4 flex-shrink-0">
+                 <button 
+                   onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} 
+                   className="p-2 bg-white shadow-sm border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 transition"
+                 >
+                   <ChevronLeft size={20}/>
+                 </button>
+                 <span className="font-bold text-base md:text-lg uppercase tracking-wider w-40 md:w-48 text-center text-[#7A1020]">
+                   {meses[calendarDate.getMonth()]} {calendarDate.getFullYear()}
+                 </span>
+                 <button 
+                   onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} 
+                   className="p-2 bg-white shadow-sm border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 transition"
+                 >
+                   <ChevronRight size={20}/>
+                 </button>
+               </div>
+
+               {/* Etiquetas de los Días */}
+               <div className="grid grid-cols-7 gap-1 md:gap-1.5 mb-2 flex-shrink-0">
+                 {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
+                   <div key={d} className="text-center text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest py-1 bg-gray-100 rounded">
+                     {d}
+                   </div>
+                 ))}
+               </div>
+
+               {/* Cuadrícula de los Días (Scrollable si es necesario) */}
+               <div className="grid grid-cols-7 gap-1 md:gap-1.5 flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300">
+                  {/* Espacios Vacíos */}
+                  {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+                    <div key={`empty-${i}`} className="min-h-[80px] md:min-h-[100px] rounded-lg border border-dashed border-gray-200 bg-gray-50/40" />
+                  ))}
+
+                  {/* Días con Eventos */}
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const dia = i + 1;
+                    const isToday = (
+                      dia === new Date().getDate() &&
+                      calendarDate.getMonth() === new Date().getMonth() &&
+                      calendarDate.getFullYear() === new Date().getFullYear()
+                    );
+                    
+                    const eventosDelDia = eventos.filter(ev => {
+                      const d = new Date(ev.fecha_evento)
+                      return d.getDate() === dia && d.getMonth() === calendarDate.getMonth() && d.getFullYear() === calendarDate.getFullYear()
+                    });
+
+                    // Mostrar todos los eventos de lectura sin límite para que el usuario pueda verlos
+                    return (
+                      <div
+                        key={dia}
+                        className={`min-h-[80px] md:min-h-[100px] p-1.5 rounded-lg border flex flex-col overflow-hidden bg-white ${isToday ? 'border-[#7A1020] bg-[#FDF5F6] ring-1 ring-red-100' : 'border-[#E8E6DC]'}`}
+                      >
+                        <div className="flex justify-end mb-1">
+                          <span className={`text-xs md:text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-[#7A1020] text-white' : 'text-gray-400'}`}>
+                            {dia}
+                          </span>
+                        </div>
+
+                        {/* Chips de Eventos (Clicables para ver Tooltip) */}
+                        <div className="flex-1 flex flex-col gap-1 overflow-y-auto scrollbar-hide">
+                          {eventosDelDia.map(ev => {
+                            const { chip } = chipStyle(ev.tipo);
+                            const hora = new Date(ev.fecha_evento).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+                            return (
+                              <div
+                                key={ev.id}
+                                onClick={() => setSelectedEvent(ev)}
+                                className={`text-[9px] md:text-xs font-semibold px-1.5 py-1 rounded-r-md truncate cursor-pointer hover:opacity-80 transition hover:scale-[1.02] ${chip}`}
+                                title={ev.titulo}
+                              >
+                                <span className="opacity-60 mr-1">{hora}</span>{ev.titulo}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+               </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* TOOLTIP / MODAL DETALLES DE EVENTO */}
+      {/* ========================================== */}
+      {selectedEvent && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in zoom-in-95" 
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden" 
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header del Tooltip */}
+            <div className="p-4 border-b border-gray-100 flex justify-between items-start bg-gray-50">
+              <div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${chipStyle(selectedEvent.tipo).badge}`}>
+                  {selectedEvent.tipo}
+                </span>
+                <h3 className="text-lg md:text-xl font-black text-gray-800 mt-2 leading-tight">
+                  {selectedEvent.titulo}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setSelectedEvent(null)} 
+                className="p-1.5 bg-gray-200 text-gray-500 hover:bg-gray-300 rounded-lg transition flex-shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            {/* Cuerpo del Tooltip */}
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-3 text-sm text-gray-700 font-medium">
+                <div className="p-2 bg-[#FDF5F6] rounded-lg">
+                  <Calendar size={18} className="text-[#7A1020]" />
+                </div>
+                <span className="capitalize">
+                  {new Date(selectedEvent.fecha_evento).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-3 text-sm text-gray-700 font-medium">
+                <div className="p-2 bg-[#FDF5F6] rounded-lg">
+                  <Clock size={18} className="text-[#7A1020]" />
+                </div>
+                <span>
+                  {new Date(selectedEvent.fecha_evento).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              
+              {selectedEvent.descripcion && (
+                <div className="bg-[#F5F4F0] p-4 rounded-xl border border-[#E8E6DC] mt-2">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                    <Info size={12}/> Notas / Detalles
+                  </p>
+                  <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                    {selectedEvent.descripcion}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
