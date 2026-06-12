@@ -335,7 +335,7 @@ export default function AdminPage() {
       <div className={`fixed inset-y-0 left-0 z-50 text-white transition-all duration-300 flex flex-col shadow-xl md:relative ${sidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full md:w-20 md:translate-x-0'}`} style={{ backgroundColor: '#7A1020' }}>
         <div className="p-4 flex items-center justify-between h-16" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
           {(sidebarOpen || (typeof window !== 'undefined' && window.innerWidth < 768)) && (
-            <h2 className="text-xl font-bold tracking-wide truncate uppercase">Panel C. Verano</h2>
+            <h2 className="text-xl font-bold tracking-wide truncate uppercase">Panel Admin</h2>
           )}
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded transition hover:bg-white/10" style={{ color: 'rgba(255,255,255,0.8)' }}>
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

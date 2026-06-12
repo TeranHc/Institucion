@@ -579,7 +579,7 @@ export default function AsistenteFinalAzul() {
             <BookOpen className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold leading-tight" style={{ color: '#FFFFFF' }}>Casita de Verano</h1>
+            <h1 className="text-lg font-bold leading-tight" style={{ color: '#FFFFFF' }}>Sistema virtual de la Escuela de Guayaquil</h1>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.65)' }}>{userEmail || 'Cargando...'}</p>
           </div>
         </div>
@@ -798,7 +798,7 @@ export default function AsistenteFinalAzul() {
                 <Send className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-[10px] text-center mt-2" style={{ color: '#B4B2A9' }}>Casita de Verano - Guayaquil, Ecuador</p>
+            <p className="text-[10px] text-center mt-2" style={{ color: '#B4B2A9' }}>Sistema virtual de la Escuela de Guayaquil - Guayaquil, Ecuador</p>
           </div>
         </div>
       </div>

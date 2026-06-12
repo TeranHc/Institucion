@@ -141,7 +141,7 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-2xl font-bold" style={{ color: '#FFFFFF' }}>
-            Casita de Verano
+            Sistema virtual de la Escuela de Guayaquil
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
             Portal de Atención Virtual
